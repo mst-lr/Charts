@@ -17,10 +17,27 @@ import QuartzCore
 import AppKit
 #endif
 
+public protocol RotateProtocol : AnyObject {
+    
+    func didRotate()
+    func didRotate(chart : PieRadarChartViewBase)
+    
+}
+
+public extension RotateProtocol {
+    
+    //Empty implementation to make it optional
+    func didRotate(chart : PieRadarChartViewBase){
+    
+    }
+    
+}
 
 /// Base class of PieChartView and RadarChartView.
 open class PieRadarChartViewBase: ChartViewBase
 {
+    public var rotateDelegate : RotateProtocol?
+    
     /// holds the normalized version of the current rotation angle of the chart
     private var _rotationAngle = CGFloat(270.0)
     
@@ -485,6 +502,8 @@ open class PieRadarChartViewBase: ChartViewBase
     
     internal final func processRotationGestureBegan(location: CGPoint)
     {
+        rotateDelegate?.didRotate()
+        rotateDelegate?.didRotate(chart: self)
         self.resetVelocity()
         
         if rotationEnabled
@@ -499,6 +518,9 @@ open class PieRadarChartViewBase: ChartViewBase
     
     internal final func processRotationGestureMoved(location: CGPoint)
     {
+        rotateDelegate?.didRotate()
+        rotateDelegate?.didRotate(chart: self)
+        
         if isDragDecelerationEnabled
         {
             sampleVelocity(touchLocation: location)
@@ -522,6 +544,9 @@ open class PieRadarChartViewBase: ChartViewBase
     
     internal final func processRotationGestureEnded(location: CGPoint)
     {
+        rotateDelegate?.didRotate()
+        rotateDelegate?.didRotate(chart: self)
+        
         if isDragDecelerationEnabled
         {
             stopDeceleration()
