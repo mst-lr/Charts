@@ -39,6 +39,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
     ///
     /// The ````internal```` specifier is to allow subclasses (HorizontalBar) to populate the same array
     internal lazy var accessibilityOrderedElements: [[NSUIAccessibilityElement]] = accessibilityCreateEmptyOrderedElements()
+    internal let barCornerRadius = CGFloat(3.0)
 
     private typealias Buffer = [CGRect]
     
@@ -373,6 +374,7 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             guard viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width) else { continue }
             guard viewPortHandler.isInBoundsRight(barRect.origin.x) else { break }
 
+            /*
             if !isSingleColor
             {
                 // Set the color for the currently drawn value. If the index is out of bounds, reuse colors.
@@ -380,7 +382,10 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             }
             
             context.fill(barRect)
+            */
             
+            drawBar(context: context, dataSet: dataSet, index: j, barRect: barRect)
+
             if drawBorder
             {
                 context.setStrokeColor(borderColor.cgColor)
@@ -405,6 +410,68 @@ open class BarChartRenderer: BarLineScatterCandleBubbleRenderer
             }
         }
     }
+    
+    open func drawBar(context: CGContext, dataSet: BarChartDataSetProtocol, index: Int, barRect: CGRect)
+    {
+        context.saveGState()
+        defer { context.restoreGState() }
+        let value = dataSet.entryForIndex(index)?.y ?? 0.0
+        if let gradientColor = dataSet.barGradientColor(at: index)
+        {
+            drawGradient(context: context, barRect: barRect, gradientColors: gradientColor, orientation: .vertical ,positiveValue: (value >= 0))
+        }
+        else
+        {
+            // Set the color for the currently drawn value. If the index is out of bounds, reuse colors.
+            let fillColor = dataSet.color(atIndex: index).cgColor
+            context.setFillColor(fillColor)
+//            context.fill(barRect)
+            
+            let bezierPath = UIBezierPath(roundedRect: barRect, cornerRadius: barCornerRadius)
+            context.addPath(bezierPath.cgPath)
+            
+            context.drawPath(using: .fill)
+        }
+    }
+    
+    open func drawGradient(context: CGContext, barRect: CGRect, gradientColors: Array<NSUIColor>, orientation: BarGradientOrientation, positiveValue : Bool = true)
+    {
+        let cgColors = gradientColors.map{ $0.cgColor } as CFArray
+        let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: cgColors, locations: nil)
+        
+        let startPoint: CGPoint
+        let endPoint: CGPoint
+        
+        switch orientation
+        {
+        case .vertical:
+            
+            if positiveValue {
+                startPoint = CGPoint(x: barRect.midX, y: barRect.maxY)
+                endPoint = CGPoint(x: barRect.midX, y: barRect.minY)
+
+            }else{
+                startPoint = CGPoint(x: barRect.midX, y: barRect.minY)
+                endPoint = CGPoint(x: barRect.midX, y: barRect.maxY)
+            }
+            
+            
+        case .horizontal:
+            startPoint = CGPoint(x: barRect.minX, y: barRect.midY)
+            endPoint = CGPoint(x: barRect.maxX, y: barRect.midY)
+        }
+        
+        let bezierPath = UIBezierPath(roundedRect: barRect, cornerRadius: barCornerRadius)
+
+        
+//        let path = CGPath(rect: barRect, transform: nil)
+        context.addPath(bezierPath.cgPath)
+
+//        context.addPath(path)
+        context.clip()
+        context.drawLinearGradient(gradient!, start: startPoint, end: endPoint, options: [])
+    }
+    
     
     open func prepareBarHighlight(
         x: Double,
