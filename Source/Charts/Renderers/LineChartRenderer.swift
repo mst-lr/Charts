@@ -760,7 +760,8 @@ open class LineChartRenderer: LineRadarRenderer
         
         for high in indices
         {
-            guard let set = lineData[high.dataSetIndex] as? LineChartDataSetProtocol,
+//            guard let set = lineData[high.dataSetIndex] as? LineChartDataSetProtocol,
+            guard let set = lineData[safe: high.dataSetIndex] as? LineChartDataSetProtocol,
                   set.isHighlightEnabled
             else { continue }
             
